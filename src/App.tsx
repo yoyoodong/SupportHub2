@@ -13,7 +13,8 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
@@ -69,6 +70,11 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
+
+  const currentUser = {
+    name: 'Dong',
+    role: 'Administrator'
+  };
 
   // Data Fetching
   const fetchData = async () => {
@@ -202,6 +208,25 @@ export default function App() {
     } catch (error) {
       console.error('Update error:', error);
       showToast('更新失败');
+    }
+  };
+
+  const handleDeleteFeedback = async (recordId: string) => {
+    if (!window.confirm('确定要删除这条反馈吗？')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('feedback_pool')
+        .delete()
+        .eq('id', recordId);
+        
+      if (error) throw error;
+      
+      showToast('反馈已删除');
+      fetchData(); // Refresh list
+    } catch (error) {
+      console.error('Delete error:', error);
+      showToast('删除失败，请重试');
     }
   };
 
@@ -452,7 +477,7 @@ export default function App() {
                                   className="text-xs bg-apple-gray-50 border-none rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-apple-blue/20 outline-none font-medium cursor-pointer"
                                 >
                                   {Object.values(FeedbackStatus).map(s => (
-                                    <option key={s} value={s}>{s === 'pending' ? '待解答' : s === 'processing' ? '处理中' : '已解决'}</option>
+                                    <option key={s} value={s}>{s === 'pending' ? '待解答' : s === 'processing' ? '处理中' : s === '已解决'}</option>
                                   ))}
                                 </select>
                                 {item.status !== FeedbackStatus.RESOLVED && (
@@ -462,6 +487,15 @@ export default function App() {
                                   >
                                     <ExternalLink size={14} />
                                     转为问答
+                                  </button>
+                                )}
+                                {(currentUser.role === 'Administrator' || item.submitter === currentUser.name) && (
+                                  <button 
+                                    onClick={() => handleDeleteFeedback(item.recordId!)}
+                                    className="p-2 text-apple-gray-300 hover:text-apple-red hover:bg-apple-red/5 rounded-lg transition-all"
+                                    title="删除反馈"
+                                  >
+                                    <Trash2 size={16} />
                                   </button>
                                 )}
                               </div>
