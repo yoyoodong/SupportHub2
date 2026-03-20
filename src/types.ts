@@ -37,6 +37,7 @@ export interface FeedbackEntry {
   recordId?: string;
   id: string;
   user_voice: string;
+  category: QACategory;
   channel: FeedbackChannel;
   image_urls: string[];
   status: FeedbackStatus;

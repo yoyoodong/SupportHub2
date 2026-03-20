@@ -14,7 +14,8 @@ import {
   AlertCircle,
   CheckCircle2,
   ExternalLink,
-  Trash2
+  Trash2,
+  Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from './lib/supabase';
@@ -67,6 +68,7 @@ export default function App() {
   const [feedbackList, setFeedbackList] = useState<FeedbackEntry[]>([]);
   const [showNewFeedbackModal, setShowNewFeedbackModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState<FeedbackEntry | null>(null);
+  const [showEditQAModal, setShowEditQAModal] = useState<QAEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -177,6 +179,7 @@ export default function App() {
     
     const payload = {
       user_voice: formData.get('user_voice') as string,
+      category: formData.get('category') as QACategory,
       channel: formData.get('channel') as FeedbackChannel,
       submitter: name,
     };
@@ -227,6 +230,54 @@ export default function App() {
     } catch (error) {
       console.error('Delete error:', error);
       showToast('删除失败，请重试');
+    }
+  };
+
+  const handleDeleteQA = async (recordId: string) => {
+    if (!window.confirm('确定要删除这条问答参考吗？')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('qa_base')
+        .delete()
+        .eq('id', recordId);
+        
+      if (error) throw error;
+      
+      showToast('问答参考已删除');
+      fetchData(); // Refresh list
+    } catch (error) {
+      console.error('Delete QA error:', error);
+      showToast('删除失败，请重试');
+    }
+  };
+
+  const handleUpdateQA = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!showEditQAModal) return;
+
+    const formData = new FormData(e.currentTarget);
+    const updatedData = {
+      category: formData.get('category') as QACategory,
+      question: formData.get('question') as string,
+      script: formData.get('script') as string,
+      notes: formData.get('notes') as string,
+    };
+
+    try {
+      const { error } = await supabase
+        .from('qa_base')
+        .update(updatedData)
+        .eq('id', showEditQAModal.recordId || showEditQAModal.id);
+        
+      if (error) throw error;
+      
+      showToast('修改成功');
+      setShowEditQAModal(null);
+      fetchData(); // Refresh list
+    } catch (error) {
+      console.error('Update QA error:', error);
+      showToast('修改失败');
     }
   };
 
@@ -400,13 +451,33 @@ export default function App() {
                             Q-{(index + 1).toString().padStart(3, '0')}
                           </span>
                         </div>
-                        <button 
-                          onClick={() => handleCopy(item.script)}
-                          className="flex items-center gap-2 px-4 py-2 bg-apple-blue-light text-apple-blue rounded-full text-xs font-bold hover:bg-apple-blue hover:text-white transition-all opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 whitespace-nowrap"
-                        >
-                          <Copy size={14} />
-                          复制话术
-                        </button>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                          <button 
+                            onClick={() => handleCopy(item.script)}
+                            className="flex items-center gap-2 px-4 py-2 bg-apple-blue-light text-apple-blue rounded-full text-xs font-bold hover:bg-apple-blue hover:text-white transition-all whitespace-nowrap"
+                          >
+                            <Copy size={14} />
+                            复制话术
+                          </button>
+                          {currentUser.role === 'Administrator' && (
+                            <>
+                              <button 
+                                onClick={() => setShowEditQAModal(item)}
+                                className="p-2 bg-apple-gray-100 text-apple-gray-300 rounded-full hover:bg-apple-blue hover:text-white transition-all"
+                                title="编辑"
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteQA(item.recordId || item.id)}
+                                className="p-2 bg-apple-gray-100 text-apple-gray-300 rounded-full hover:bg-red-500 hover:text-white transition-all"
+                                title="删除"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <h3 className="text-xl font-bold text-apple-text mb-4 leading-tight tracking-tight">{item.question}</h3>
                       <div className="bg-apple-gray-50 rounded-2xl p-6 mb-6 border border-apple-gray-100">
@@ -442,6 +513,7 @@ export default function App() {
                       <thead>
                         <tr className="bg-apple-gray-50/50 border-b border-apple-gray-100">
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">状态</th>
+                          <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">分类</th>
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">用户原声</th>
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">渠道</th>
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">提交人</th>
@@ -453,6 +525,9 @@ export default function App() {
                           <tr key={item.recordId} className="hover:bg-apple-gray-50/30 transition-colors group">
                             <td className="px-8 py-6">
                               <Badge status={item.status} />
+                            </td>
+                            <td className="px-8 py-6">
+                              <CategoryBadge category={item.category} />
                             </td>
                             <td className="px-8 py-6 max-w-xl">
                               <p className="text-[15px] font-semibold text-apple-text line-clamp-2 mb-1.5">{item.user_voice}</p>
@@ -477,7 +552,9 @@ export default function App() {
                                   className="text-xs bg-apple-gray-50 border-none rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-apple-blue/20 outline-none font-medium cursor-pointer"
                                 >
                                   {Object.values(FeedbackStatus).map(s => (
-                                    <option key={s} value={s}>{s === 'pending' ? '待解答' : s === 'processing' ? '处理中' : s === '已解决'}</option>
+                                    <option key={s} value={s}>
+                                      {s === FeedbackStatus.PENDING ? '待解答' : s === FeedbackStatus.PROCESSING ? '处理中' : '已解决'}
+                                    </option>
                                   ))}
                                 </select>
                                 {item.status !== FeedbackStatus.RESOLVED && (
@@ -519,7 +596,7 @@ export default function App() {
 
       {/* Modals */}
       <AnimatePresence>
-        {(showNewFeedbackModal || showConvertModal) && (
+        {(showNewFeedbackModal || showConvertModal || showEditQAModal) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-apple-text/20 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -529,9 +606,11 @@ export default function App() {
               className="bg-white rounded-[28px] shadow-2xl w-full max-w-xl overflow-hidden border border-apple-gray-100"
             >
               <div className="px-8 py-6 border-b border-apple-gray-100 flex items-center justify-between bg-white">
-                <h2 className="font-bold text-xl tracking-tight">{showNewFeedbackModal ? '新建反馈' : '转为官方问答'}</h2>
+                <h2 className="font-bold text-xl tracking-tight">
+                  {showNewFeedbackModal ? '新建反馈' : showEditQAModal ? '修改问答参考' : '转为官方问答'}
+                </h2>
                 <button 
-                  onClick={() => { setShowNewFeedbackModal(false); setShowConvertModal(null); }} 
+                  onClick={() => { setShowNewFeedbackModal(false); setShowConvertModal(null); setShowEditQAModal(null); }} 
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-apple-gray-50 text-apple-gray-300 hover:text-apple-text transition-colors"
                 >
                   <X size={20} />
@@ -549,6 +628,16 @@ export default function App() {
                         placeholder="请输入用户反馈的具体内容..."
                         className="w-full apple-input h-32 resize-none py-4"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">问题类别 *</label>
+                      <select 
+                        name="category"
+                        required
+                        className="w-full apple-input cursor-pointer"
+                      >
+                        {Object.values(QACategory).map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">来源渠道 *</label>
@@ -586,6 +675,66 @@ export default function App() {
                     </button>
                   </div>
                 </form>
+              ) : showEditQAModal ? (
+                <form onSubmit={handleUpdateQA} className="p-8 space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">分类 *</label>
+                      <select 
+                        name="category"
+                        required
+                        defaultValue={showEditQAModal.category}
+                        className="w-full apple-input cursor-pointer"
+                      >
+                        {Object.values(QACategory).map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">标准问题 *</label>
+                      <input 
+                        name="question"
+                        required
+                        defaultValue={showEditQAModal.question}
+                        placeholder="请输入标准问题..."
+                        className="w-full apple-input"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">标准话术 *</label>
+                      <textarea 
+                        name="script"
+                        required
+                        defaultValue={showEditQAModal.script}
+                        placeholder="请输入标准话术..."
+                        className="w-full apple-input h-32 resize-none py-4"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">注意事项</label>
+                      <textarea 
+                        name="notes"
+                        defaultValue={showEditQAModal.notes}
+                        placeholder="请输入注意事项..."
+                        className="w-full apple-input h-24 resize-none py-4"
+                      />
+                    </div>
+                  </div>
+                  <div className="pt-4 flex gap-4">
+                    <button 
+                      type="button"
+                      onClick={() => setShowEditQAModal(null)}
+                      className="flex-1 apple-button-secondary"
+                    >
+                      取消
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-1 apple-button-primary"
+                    >
+                      保存修改
+                    </button>
+                  </div>
+                </form>
               ) : (
                 <form onSubmit={handleConvertToQA} className="p-8 space-y-6">
                   <div className="grid grid-cols-2 gap-6">
@@ -594,6 +743,7 @@ export default function App() {
                       <select 
                         name="category"
                         required
+                        defaultValue={showConvertModal?.category}
                         className="w-full apple-input cursor-pointer"
                       >
                         {Object.values(QACategory).map(c => <option key={c} value={c}>{c}</option>)}
