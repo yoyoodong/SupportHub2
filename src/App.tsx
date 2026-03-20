@@ -16,6 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from './lib/supabase';
 import { QACategory, FeedbackChannel, FeedbackStatus, QAEntry, FeedbackEntry } from './types';
 
 // --- Components ---
@@ -72,32 +73,39 @@ export default function App() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      // Check if Supabase is configured
+      const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!isSupabaseConfigured) {
+        throw new Error('Supabase configuration missing');
+      }
+
       const [qaRes, feedbackRes] = await Promise.all([
-        fetch('/api/feishu/qa'),
-        fetch('/api/feishu/feedback')
+        supabase.from('qa').select('*'),
+        supabase.from('feedback').select('*')
       ]);
 
-      if (!qaRes.ok || !feedbackRes.ok) {
-        throw new Error('Config missing or API error');
+      if (qaRes.error || feedbackRes.error) {
+        throw new Error(qaRes.error?.message || feedbackRes.error?.message || 'Supabase error');
       }
 
-      const qaData = await qaRes.json();
-      const feedbackData = await feedbackRes.json();
-
-      // If server returns error object instead of array
-      if (qaData.error || feedbackData.error) {
-        throw new Error('Feishu API Error');
-      }
-
-      setQaList(qaData);
-      setFeedbackList(feedbackData);
+      setQaList(qaRes.data || []);
+      setFeedbackList(feedbackRes.data || []);
       setIsDemoMode(false);
+      showToast('数据库连接成功');
     } catch (error: any) {
-      console.warn('Using Mock Data Fallback:', error.message);
+      console.warn('Supabase Error:', error.message);
       setQaList(MOCK_QA);
       setFeedbackList(MOCK_FEEDBACK);
       setIsDemoMode(true);
-      showToast('当前处于演示模式（未连接飞书）');
+      
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        showToast('数据库表不存在，请先创建表');
+      } else if (error.message.includes('configuration missing')) {
+        showToast('请在 Secrets 中配置 Supabase 密钥');
+      } else {
+        showToast('数据库连接失败，进入演示模式');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -145,33 +153,31 @@ export default function App() {
     };
 
     try {
-      const res = await fetch('/api/feishu/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to submit feedback');
+      const { error } = await supabase.from('feedback').insert([payload]);
+      if (error) throw error;
       
       showToast('反馈提交成功');
       setShowNewFeedbackModal(false);
       fetchData(); // Refresh list
     } catch (error) {
-      showToast('提交失败，请重试');
+      console.error('Submit error:', error);
+      showToast('提交失败，请检查数据库配置');
     }
   };
 
   const handleStatusChange = async (recordId: string, status: FeedbackStatus) => {
     try {
-      const res = await fetch(`/api/feishu/feedback/${recordId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) throw new Error('Failed to update status');
+      const { error } = await supabase
+        .from('feedback')
+        .update({ status })
+        .eq('id', recordId);
+        
+      if (error) throw error;
       
       showToast('状态已更新');
       fetchData(); // Refresh list
     } catch (error) {
+      console.error('Update error:', error);
       showToast('更新失败');
     }
   };
@@ -190,20 +196,22 @@ export default function App() {
     };
 
     try {
-      const res = await fetch('/api/feishu/convert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          feedbackRecordId: showConvertModal.recordId,
-          qaData
-        }),
-      });
-      if (!res.ok) throw new Error('Failed to convert');
+      // 1. Create QA entry
+      const { error: qaError } = await supabase.from('qa').insert([qaData]);
+      if (qaError) throw qaError;
+
+      // 2. Update feedback status to RESOLVED
+      const { error: feedbackError } = await supabase
+        .from('feedback')
+        .update({ status: FeedbackStatus.RESOLVED })
+        .eq('id', showConvertModal.recordId);
+      if (feedbackError) throw feedbackError;
 
       showToast('已成功转为官方问答');
       setShowConvertModal(null);
       fetchData(); // Refresh both lists
     } catch (error) {
+      console.error('Convert error:', error);
       showToast('转换失败');
     }
   };
@@ -264,13 +272,23 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="p-6 border-t border-apple-gray-100">
+        <div className="p-6 border-t border-apple-gray-100 space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-apple-gray-300">Database Status</span>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-apple-red animate-pulse' : 'bg-apple-green'}`} />
+              <span className={`text-[10px] font-bold ${isDemoMode ? 'text-apple-red' : 'text-apple-green'}`}>
+                {isDemoMode ? 'DEMO MODE' : 'CONNECTED'}
+              </span>
+            </div>
+          </div>
+          
           <div className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-apple-gray-100 shadow-sm">
             <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center text-apple-text font-bold text-sm">
-              GD
+              D
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">Greta Dong</p>
+              <p className="text-sm font-semibold truncate">Dong</p>
               <p className="text-[11px] text-apple-gray-300 truncate">Administrator</p>
             </div>
           </div>
