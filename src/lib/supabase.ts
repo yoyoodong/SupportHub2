@@ -1,10 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseUrl = (process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+const supabaseAnonKey = (process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials missing. App will run in demo mode.');
+const isConfigured = supabaseUrl && supabaseAnonKey && 
+                    supabaseUrl !== 'https://placeholder.supabase.co' && 
+                    supabaseAnonKey !== 'placeholder';
+
+if (!isConfigured) {
+  console.warn('Supabase credentials missing or invalid. App will run in demo mode.');
 }
 
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'placeholder');
+export const supabase = createClient(
+  isConfigured ? supabaseUrl : 'https://placeholder.supabase.co', 
+  isConfigured ? supabaseAnonKey : 'placeholder'
+);

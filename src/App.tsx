@@ -74,10 +74,15 @@ export default function App() {
     setIsLoading(true);
     try {
       // Check if Supabase is configured
-      const isSupabaseConfigured = (process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL) && 
-                                   (process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY);
+      const url = (process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+      const key = (process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+      
+      const isSupabaseConfigured = url && key && 
+                                   url !== 'https://placeholder.supabase.co' && 
+                                   key !== 'placeholder';
       
       if (!isSupabaseConfigured) {
+        console.warn('Supabase configuration missing or invalid:', { url: !!url, key: !!key });
         throw new Error('Supabase configuration missing');
       }
 
@@ -115,9 +120,9 @@ export default function App() {
       setIsDemoMode(true);
       
       if (error.message.includes('relation') && error.message.includes('does not exist')) {
-        showToast('数据库表不存在，请先创建表');
+        showToast('数据库表不存在，请检查表名是否为 qa_base 和 feedback_pool');
       } else if (error.message.includes('configuration missing')) {
-        showToast('请在 Secrets 中配置 Supabase 密钥');
+        showToast('请在右上角 Settings -> Secrets 中配置 SUPABASE_URL 和 SUPABASE_ANON_KEY');
       } else {
         showToast('数据库连接失败，进入演示模式');
       }
@@ -294,6 +299,14 @@ export default function App() {
               <span className={`text-[10px] font-bold ${isDemoMode ? 'text-apple-red' : 'text-apple-green'}`}>
                 {isDemoMode ? 'DEMO MODE' : 'CONNECTED'}
               </span>
+              {isDemoMode && (
+                <button 
+                  onClick={fetchData}
+                  className="ml-2 text-[10px] font-bold text-apple-blue hover:underline"
+                >
+                  RETRY
+                </button>
+              )}
             </div>
           </div>
           
