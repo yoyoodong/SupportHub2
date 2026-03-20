@@ -32,7 +32,7 @@ const Badge = ({ status }: { status: FeedbackStatus }) => {
     [FeedbackStatus.RESOLVED]: '已解决',
   };
   return (
-    <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${styles[status]}`}>
+    <span className={`px-3 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${styles[status]}`}>
       {labels[status]}
     </span>
   );
@@ -46,7 +46,7 @@ const CategoryBadge = ({ category }: { category: QACategory }) => {
     [QACategory.AFTER_SALES]: 'bg-apple-red/10 text-apple-red border-apple-red/20',
   };
   return (
-    <span className={`px-3 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wider ${colors[category] || 'bg-apple-gray-100 text-apple-gray-300'}`}>
+    <span className={`px-3 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wider whitespace-nowrap ${colors[category] || 'bg-apple-gray-100 text-apple-gray-300'}`}>
       {category}
     </span>
   );
@@ -402,7 +402,7 @@ export default function App() {
                               <p className="text-[11px] text-apple-gray-300 font-medium">{new Date(item.created_at).toLocaleString()}</p>
                             </td>
                             <td className="px-8 py-6">
-                              <span className="text-[11px] font-bold px-3 py-1 bg-apple-gray-100 rounded-full text-apple-text uppercase tracking-wider">{item.channel}</span>
+                              <span className="text-[11px] font-bold px-3 py-1 bg-apple-gray-100 rounded-full text-apple-text uppercase tracking-wider whitespace-nowrap">{item.channel}</span>
                             </td>
                             <td className="px-8 py-6">
                               <div className="flex items-center gap-3">
