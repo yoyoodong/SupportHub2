@@ -17,6 +17,8 @@
   --color-apple-green: #28CD41;
   --color-apple-red: #FF3B30;
   --color-apple-orange: #FF9500;
+  --color-apple-purple: #AF52DE;
+  --color-apple-gray-500: #6E6E73;
 }
 
 @layer base {

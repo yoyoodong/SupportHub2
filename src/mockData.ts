@@ -88,7 +88,7 @@ export const MOCK_FEEDBACK: FeedbackEntry[] = [
     recordId: 'mock-2',
     id: 'F-002',
     user_voice: '木色边框什么时候能出？我家是侘寂风，黑白色都不太搭。',
-    category: QACategory.PRE_SALES,
+    category: QACategory.APPEARANCE,
     channel: FeedbackChannel.XHS,
     image_urls: [],
     status: FeedbackStatus.PROCESSING,

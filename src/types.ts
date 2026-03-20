@@ -4,10 +4,12 @@
  */
 
 export enum QACategory {
-  PRE_SALES = '售前与硬件',
   CORE_FEATURES = '核心功能',
-  ART_CONTENT = '艺术内容与版权',
+  APPEARANCE = '外观相关',
   AFTER_SALES = '售后与排查',
+  ART_CONTENT = '艺术内容与版权',
+  PRE_SALES = '售前与硬件',
+  OTHER = '其他',
 }
 
 export enum FeedbackChannel {

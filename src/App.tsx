@@ -11,6 +11,7 @@ import {
   MessageSquare, 
   Copy, 
   X,
+  Menu,
   AlertCircle,
   CheckCircle2,
   ExternalLink,
@@ -44,10 +45,12 @@ const Badge = ({ status }: { status: FeedbackStatus }) => {
 
 const CategoryBadge = ({ category }: { category: QACategory }) => {
   const colors: Record<string, string> = {
-    [QACategory.PRE_SALES]: 'bg-apple-blue/10 text-apple-blue border-apple-blue/20',
     [QACategory.CORE_FEATURES]: 'bg-apple-indigo/10 text-apple-indigo border-apple-indigo/20',
-    [QACategory.ART_CONTENT]: 'bg-apple-orange/10 text-apple-orange border-apple-orange/20',
+    [QACategory.APPEARANCE]: 'bg-apple-purple/10 text-apple-purple border-apple-purple/20',
     [QACategory.AFTER_SALES]: 'bg-apple-red/10 text-apple-red border-apple-red/20',
+    [QACategory.ART_CONTENT]: 'bg-apple-orange/10 text-apple-orange border-apple-orange/20',
+    [QACategory.PRE_SALES]: 'bg-apple-blue/10 text-apple-blue border-apple-blue/20',
+    [QACategory.OTHER]: 'bg-apple-gray-100 text-apple-gray-500 border-apple-gray-200',
   };
   return (
     <span className={`px-3 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wider whitespace-nowrap ${colors[category] || 'bg-apple-gray-100 text-apple-gray-300'}`}>
@@ -69,6 +72,7 @@ export default function App() {
   const [showNewFeedbackModal, setShowNewFeedbackModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState<FeedbackEntry | null>(null);
   const [showEditQAModal, setShowEditQAModal] = useState<QAEntry | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -314,97 +318,134 @@ export default function App() {
     }
   };
 
+  // --- Sidebar Content ---
+  const SidebarContent = () => (
+    <>
+      <div className="p-8">
+        <div className="flex items-center gap-3 font-bold text-2xl tracking-tighter text-apple-text">
+          <div className="w-10 h-10 bg-apple-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-apple-blue/20">
+            <BookOpen size={22} />
+          </div>
+          MagicFrame
+        </div>
+        <p className="text-[11px] text-apple-gray-300 mt-2 uppercase tracking-[0.2em] font-bold">Internal CS Hub</p>
+      </div>
+
+      <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+        <button 
+          onClick={() => { setActiveTab('qa'); setIsMobileMenuOpen(false); }}
+          className={`w-full apple-sidebar-item ${activeTab === 'qa' ? 'apple-sidebar-item-active' : 'apple-sidebar-item-inactive'}`}
+        >
+          <BookOpen size={18} />
+          官方问答参考库
+        </button>
+        
+        {activeTab === 'qa' && (
+          <div className="ml-6 mt-2 space-y-1 border-l border-apple-gray-200 pl-4">
+            <button 
+              onClick={() => { setSelectedCategory('all'); setIsMobileMenuOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-all ${selectedCategory === 'all' ? 'text-apple-blue font-semibold bg-apple-blue/5' : 'text-apple-gray-300 hover:text-apple-text'}`}
+            >
+              全部类别
+            </button>
+            {Object.values(QACategory).map(cat => (
+              <button 
+                key={cat}
+                onClick={() => { setSelectedCategory(cat); setIsMobileMenuOpen(false); }}
+                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-all ${selectedCategory === cat ? 'text-apple-blue font-semibold bg-apple-blue/5' : 'text-apple-gray-300 hover:text-apple-text'}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <button 
+          onClick={() => { setActiveTab('feedback'); setIsMobileMenuOpen(false); }}
+          className={`w-full apple-sidebar-item mt-2 ${activeTab === 'feedback' ? 'apple-sidebar-item-active' : 'apple-sidebar-item-inactive'}`}
+        >
+          <MessageSquare size={18} />
+          用户问题池
+        </button>
+      </nav>
+
+      <div className="p-6 border-t border-apple-gray-100 space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-apple-gray-300">Database Status</span>
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-apple-red animate-pulse' : 'bg-apple-green'}`} />
+            <span className={`text-[10px] font-bold ${isDemoMode ? 'text-apple-red' : 'text-apple-green'}`}>
+              {isDemoMode ? 'DEMO MODE' : 'CONNECTED'}
+            </span>
+            {isDemoMode && (
+              <button 
+                onClick={fetchData}
+                className="ml-2 text-[10px] font-bold text-apple-blue hover:underline"
+              >
+                RETRY
+              </button>
+            )}
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-apple-gray-100 shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center text-apple-text font-bold text-sm">
+            D
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">Dong</p>
+            <p className="text-[11px] text-apple-gray-300 truncate">Administrator</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="flex h-screen bg-white text-apple-text font-sans overflow-hidden"
     >
-      {/* Sidebar */}
-      <aside className="w-72 bg-apple-gray-50 border-r border-apple-gray-100 flex flex-col">
-        <div className="p-8">
-          <div className="flex items-center gap-3 font-bold text-2xl tracking-tighter text-apple-text">
-            <div className="w-10 h-10 bg-apple-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-apple-blue/20">
-              <BookOpen size={22} />
-            </div>
-            MagicFrame
-          </div>
-          <p className="text-[11px] text-apple-gray-300 mt-2 uppercase tracking-[0.2em] font-bold">Internal CS Hub</p>
-        </div>
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-apple-text/20 backdrop-blur-sm z-40 lg:hidden"
+            />
+            <motion.aside 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-72 bg-apple-gray-50 border-r border-apple-gray-100 flex flex-col z-50 lg:hidden"
+            >
+              <SidebarContent />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
 
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
-          <button 
-            onClick={() => setActiveTab('qa')}
-            className={`w-full apple-sidebar-item ${activeTab === 'qa' ? 'apple-sidebar-item-active' : 'apple-sidebar-item-inactive'}`}
-          >
-            <BookOpen size={18} />
-            官方问答参考库
-          </button>
-          
-          {activeTab === 'qa' && (
-            <div className="ml-6 mt-2 space-y-1 border-l border-apple-gray-200 pl-4">
-              <button 
-                onClick={() => setSelectedCategory('all')}
-                className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-all ${selectedCategory === 'all' ? 'text-apple-blue font-semibold bg-apple-blue/5' : 'text-apple-gray-300 hover:text-apple-text'}`}
-              >
-                全部类别
-              </button>
-              {Object.values(QACategory).map(cat => (
-                <button 
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-all ${selectedCategory === cat ? 'text-apple-blue font-semibold bg-apple-blue/5' : 'text-apple-gray-300 hover:text-apple-text'}`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <button 
-            onClick={() => setActiveTab('feedback')}
-            className={`w-full apple-sidebar-item mt-2 ${activeTab === 'feedback' ? 'apple-sidebar-item-active' : 'apple-sidebar-item-inactive'}`}
-          >
-            <MessageSquare size={18} />
-            用户问题池
-          </button>
-        </nav>
-
-        <div className="p-6 border-t border-apple-gray-100 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-apple-gray-300">Database Status</span>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-apple-red animate-pulse' : 'bg-apple-green'}`} />
-              <span className={`text-[10px] font-bold ${isDemoMode ? 'text-apple-red' : 'text-apple-green'}`}>
-                {isDemoMode ? 'DEMO MODE' : 'CONNECTED'}
-              </span>
-              {isDemoMode && (
-                <button 
-                  onClick={fetchData}
-                  className="ml-2 text-[10px] font-bold text-apple-blue hover:underline"
-                >
-                  RETRY
-                </button>
-              )}
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-4 flex items-center gap-4 border border-apple-gray-100 shadow-sm">
-            <div className="w-10 h-10 rounded-full bg-apple-gray-100 flex items-center justify-center text-apple-text font-bold text-sm">
-              D
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">Dong</p>
-              <p className="text-[11px] text-apple-gray-300 truncate">Administrator</p>
-            </div>
-          </div>
-        </div>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-72 bg-apple-gray-50 border-r border-apple-gray-100 flex-col h-full">
+        <SidebarContent />
       </aside>
 
       {/* Main Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-white">
         {/* Header */}
-        <header className="h-20 apple-glass px-10 flex items-center justify-between gap-8 sticky top-0 z-10">
+        <header className="h-20 apple-glass px-6 md:px-10 flex items-center justify-between gap-4 md:gap-8 sticky top-0 z-10">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-apple-gray-50 text-apple-gray-300 hover:text-apple-text"
+          >
+            <Menu size={20} />
+          </button>
           <div className="flex-1 max-w-2xl relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-gray-300 group-focus-within:text-apple-blue transition-colors" size={18} />
             <input 
@@ -425,7 +466,7 @@ export default function App() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-10">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full text-apple-gray-300">
               <div className="w-12 h-12 border-4 border-apple-blue border-t-transparent rounded-full animate-spin mb-6"></div>
@@ -440,10 +481,10 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                  className="grid grid-cols-1 xl:grid-cols-2 gap-8"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
                   {filteredQA.map((item, index) => (
-                    <div key={item.recordId || item.id} className="apple-card p-8 group">
+                    <div key={item.recordId || item.id} className="apple-card p-6 md:p-8 group">
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex items-center gap-3">
                           <CategoryBadge category={item.category} />
@@ -513,7 +554,7 @@ export default function App() {
                       <thead>
                         <tr className="bg-apple-gray-50/50 border-b border-apple-gray-100">
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">状态</th>
-                          <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">分类</th>
+                          <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">问题类别</th>
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">用户原声</th>
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">渠道</th>
                           <th className="px-8 py-5 text-[11px] font-bold text-apple-gray-300 uppercase tracking-[0.2em]">提交人</th>
