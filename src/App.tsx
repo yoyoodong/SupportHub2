@@ -115,7 +115,6 @@ export default function App() {
       const mappedFeedback = (feedbackRes.data || []).map(item => ({
         ...item,
         recordId: item.id,
-        category: item.category || QACategory.CORE_FEATURES, // Default to Core Features if missing
         created_at: item.created_at ? new Date(item.created_at).getTime() : Date.now()
       }));
 
