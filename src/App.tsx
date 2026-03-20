@@ -82,16 +82,30 @@ export default function App() {
       }
 
       const [qaRes, feedbackRes] = await Promise.all([
-        supabase.from('qa').select('*'),
-        supabase.from('feedback').select('*')
+        supabase.from('qa_base').select('*'),
+        supabase.from('feedback_pool').select('*')
       ]);
 
       if (qaRes.error || feedbackRes.error) {
         throw new Error(qaRes.error?.message || feedbackRes.error?.message || 'Supabase error');
       }
 
-      setQaList(qaRes.data || []);
-      setFeedbackList(feedbackRes.data || []);
+      // Map Supabase 'id' to 'recordId' for internal tracking
+      const mappedQA = (qaRes.data || []).map(item => ({
+        ...item,
+        recordId: item.id,
+        // Ensure created_at/updated_at are numbers for the app logic
+        updated_at: item.updated_at ? new Date(item.updated_at).getTime() : Date.now()
+      }));
+
+      const mappedFeedback = (feedbackRes.data || []).map(item => ({
+        ...item,
+        recordId: item.id,
+        created_at: item.created_at ? new Date(item.created_at).getTime() : Date.now()
+      }));
+
+      setQaList(mappedQA);
+      setFeedbackList(mappedFeedback);
       setIsDemoMode(false);
       showToast('数据库连接成功');
     } catch (error: any) {
@@ -154,7 +168,7 @@ export default function App() {
     };
 
     try {
-      const { error } = await supabase.from('feedback').insert([payload]);
+      const { error } = await supabase.from('feedback_pool').insert([payload]);
       if (error) throw error;
       
       showToast('反馈提交成功');
@@ -169,7 +183,7 @@ export default function App() {
   const handleStatusChange = async (recordId: string, status: FeedbackStatus) => {
     try {
       const { error } = await supabase
-        .from('feedback')
+        .from('feedback_pool')
         .update({ status })
         .eq('id', recordId);
         
@@ -189,7 +203,6 @@ export default function App() {
 
     const formData = new FormData(e.currentTarget);
     const qaData = {
-      id: `Q-${(qaList.length + 1).toString().padStart(3, '0')}`,
       category: formData.get('category') as QACategory,
       question: formData.get('question') as string,
       script: formData.get('script') as string,
@@ -198,12 +211,12 @@ export default function App() {
 
     try {
       // 1. Create QA entry
-      const { error: qaError } = await supabase.from('qa').insert([qaData]);
+      const { error: qaError } = await supabase.from('qa_base').insert([qaData]);
       if (qaError) throw qaError;
 
       // 2. Update feedback status to RESOLVED
       const { error: feedbackError } = await supabase
-        .from('feedback')
+        .from('feedback_pool')
         .update({ status: FeedbackStatus.RESOLVED })
         .eq('id', showConvertModal.recordId);
       if (feedbackError) throw feedbackError;
@@ -319,30 +332,12 @@ export default function App() {
           </button>
         </header>
 
-        {/* Demo Mode Banner */}
-        {isDemoMode && !isLoading && (
-          <div className="bg-apple-orange/10 border-b border-apple-orange/20 px-10 py-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-apple-orange text-xs font-semibold">
-              <AlertCircle size={14} />
-              <span>演示模式：尚未配置飞书 API 密钥，当前显示为模拟数据。</span>
-            </div>
-            <a 
-              href="https://open.feishu.cn/app" 
-              target="_blank" 
-              rel="noreferrer"
-              className="text-[10px] bg-apple-orange/20 text-apple-orange px-3 py-1 rounded-full font-bold hover:bg-apple-orange/30 transition-all whitespace-nowrap"
-            >
-              配置飞书 API
-            </a>
-          </div>
-        )}
-
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-10">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full text-apple-gray-300">
               <div className="w-12 h-12 border-4 border-apple-blue border-t-transparent rounded-full animate-spin mb-6"></div>
-              <p className="text-sm font-medium tracking-tight">正在同步飞书数据...</p>
+              <p className="text-sm font-medium tracking-tight">正在同步数据库数据...</p>
             </div>
           ) : (
             <AnimatePresence mode="wait">
@@ -360,7 +355,9 @@ export default function App() {
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex items-center gap-3">
                           <CategoryBadge category={item.category} />
-                          <span className="text-[11px] font-bold text-apple-gray-300 tracking-widest">{item.id}</span>
+                          <span className="text-[11px] font-bold text-apple-gray-300 tracking-widest">
+                            {item.id.length > 8 ? item.id.slice(0, 8).toUpperCase() : item.id}
+                          </span>
                         </div>
                         <button 
                           onClick={() => handleCopy(item.script)}
