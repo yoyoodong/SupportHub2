@@ -74,7 +74,8 @@ export default function App() {
     setIsLoading(true);
     try {
       // Check if Supabase is configured
-      const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const isSupabaseConfigured = (process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) && 
+                                   (process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY);
       
       if (!isSupabaseConfigured) {
         throw new Error('Supabase configuration missing');
