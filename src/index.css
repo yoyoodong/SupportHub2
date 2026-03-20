@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Apple-inspired color palette */
+  --color-apple-gray-50: #F5F5F7;
+  --color-apple-gray-100: #E8E8ED;
+  --color-apple-gray-200: #D2D2D7;
+  --color-apple-gray-300: #86868B;
+  --color-apple-text: #1D1D1F;
+  --color-apple-text-secondary: #86868B;
+  --color-apple-blue: #0066CC;
+  --color-apple-blue-light: #EBF5FF;
+  --color-apple-indigo: #5856D6;
+  --color-apple-green: #28CD41;
+  --color-apple-red: #FF3B30;
+  --color-apple-orange: #FF9500;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-apple-text bg-white selection:bg-apple-blue/20;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  h1, h2, h3, h4 {
+    @apply tracking-tight font-semibold;
+  }
+}
+
+@layer components {
+  .apple-card {
+    @apply bg-white rounded-[18px] border border-apple-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)];
+  }
+  
+  .apple-input {
+    @apply bg-apple-gray-50 border border-transparent rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:border-apple-blue/30 focus:ring-4 focus:ring-apple-blue/5 outline-none transition-all placeholder:text-apple-gray-300;
+  }
+  
+  .apple-button-primary {
+    @apply bg-apple-blue text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-[#0071E3] active:scale-[0.97] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+  }
+  
+  .apple-button-secondary {
+    @apply bg-apple-gray-100 text-apple-text px-6 py-2.5 rounded-full text-sm font-medium hover:bg-apple-gray-200 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap;
+  }
+
+  .apple-glass {
+    @apply bg-white/80 backdrop-blur-xl border-b border-apple-gray-100;
+  }
+
+  .apple-sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200;
+  }
+
+  .apple-sidebar-item-active {
+    @apply bg-apple-blue text-white shadow-md shadow-apple-blue/20;
+  }
+
+  .apple-sidebar-item-inactive {
+    @apply text-apple-text-secondary hover:bg-apple-gray-50 hover:text-apple-text;
+  }
+}
