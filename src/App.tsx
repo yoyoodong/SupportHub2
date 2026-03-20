@@ -33,8 +33,24 @@ const Badge = ({ status }: { status: FeedbackStatus }) => {
     [FeedbackStatus.RESOLVED]: '已解决',
   };
   return (
-    <span className={`px-3 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${styles[status]}`}>
-      {labels[status]}
+    <div className="flex items-center gap-2">
+      <div className={`w-2 h-2 rounded-full ${status === FeedbackStatus.PENDING ? 'bg-apple-red' : status === FeedbackStatus.PROCESSING ? 'bg-apple-orange' : 'bg-apple-green'}`} />
+      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${styles[status]}`}>
+        {labels[status]}
+      </span>
+    </div>
+  );
+};
+
+const RoleBadge = ({ name }: { name: string }) => {
+  const isOps = name.includes('运营');
+  const isCS = name.includes('客服');
+  const role = isOps ? '运营' : isCS ? '客服' : '专员';
+  const color = isOps ? 'bg-apple-blue/10 text-apple-blue border-apple-blue/20' : 'bg-apple-indigo/10 text-apple-indigo border-apple-indigo/20';
+  
+  return (
+    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-tight whitespace-nowrap ${color}`}>
+      {role}
     </span>
   );
 };
@@ -434,11 +450,14 @@ export default function App() {
                               <span className="text-[11px] font-bold px-3 py-1 bg-apple-gray-100 rounded-full text-apple-text uppercase tracking-wider whitespace-nowrap">{item.channel}</span>
                             </td>
                             <td className="px-8 py-6">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-apple-blue-light flex items-center justify-center text-[11px] font-bold text-apple-blue">
+                              <div className="flex items-center gap-3 whitespace-nowrap">
+                                <div className="w-7 h-7 rounded-full bg-apple-blue-light flex items-center justify-center text-[10px] font-bold text-apple-blue flex-shrink-0">
                                   {item.submitter[0]}
                                 </div>
-                                <span className="text-sm font-medium text-apple-text">{item.submitter}</span>
+                                <div className="flex flex-col gap-0.5">
+                                  <RoleBadge name={item.submitter} />
+                                  <span className="text-[11px] font-medium text-apple-text whitespace-nowrap">{item.submitter.replace(/运营|客服/, '')}</span>
+                                </div>
                               </div>
                             </td>
                             <td className="px-8 py-6 text-right">

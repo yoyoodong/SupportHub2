@@ -4,10 +4,10 @@
  */
 
 export enum QACategory {
-  PRE_SALES = '#售前与硬件',
-  CORE_FEATURES = '#核心魔法功能',
-  ART_CONTENT = '#艺术内容与版权',
-  AFTER_SALES = '#售后与排查',
+  PRE_SALES = '售前与硬件',
+  CORE_FEATURES = '核心功能',
+  ART_CONTENT = '艺术内容与版权',
+  AFTER_SALES = '售后与排查',
 }
 
 export enum FeedbackChannel {
