@@ -22,10 +22,11 @@ import { QACategory, FeedbackChannel, FeedbackStatus, QAEntry, FeedbackEntry } f
 // --- Components ---
 
 const Badge = ({ status }: { status: FeedbackStatus }) => {
+  const currentStatus = status || FeedbackStatus.PENDING;
   const styles = {
-    [FeedbackStatus.PENDING]: 'bg-apple-red/10 text-apple-red border-apple-red/20',
-    [FeedbackStatus.PROCESSING]: 'bg-apple-orange/10 text-apple-orange border-apple-orange/20',
-    [FeedbackStatus.RESOLVED]: 'bg-apple-green/10 text-apple-green border-apple-green/20',
+    [FeedbackStatus.PENDING]: 'bg-apple-red/5 text-apple-red border-apple-red/10',
+    [FeedbackStatus.PROCESSING]: 'bg-apple-orange/5 text-apple-orange border-apple-orange/10',
+    [FeedbackStatus.RESOLVED]: 'bg-apple-green/5 text-apple-green border-apple-green/10',
   };
   const labels = {
     [FeedbackStatus.PENDING]: '待解答',
@@ -33,24 +34,8 @@ const Badge = ({ status }: { status: FeedbackStatus }) => {
     [FeedbackStatus.RESOLVED]: '已解决',
   };
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-2 h-2 rounded-full ${status === FeedbackStatus.PENDING ? 'bg-apple-red' : status === FeedbackStatus.PROCESSING ? 'bg-apple-orange' : 'bg-apple-green'}`} />
-      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border whitespace-nowrap ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    </div>
-  );
-};
-
-const RoleBadge = ({ name }: { name: string }) => {
-  const isOps = name.includes('运营');
-  const isCS = name.includes('客服');
-  const role = isOps ? '运营' : isCS ? '客服' : '专员';
-  const color = isOps ? 'bg-apple-blue/10 text-apple-blue border-apple-blue/20' : 'bg-apple-indigo/10 text-apple-indigo border-apple-indigo/20';
-  
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-tight whitespace-nowrap ${color}`}>
-      {role}
+    <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold border whitespace-nowrap ${styles[currentStatus] || styles[FeedbackStatus.PENDING]}`}>
+      {labels[currentStatus] || labels[FeedbackStatus.PENDING]}
     </span>
   );
 };
@@ -182,10 +167,12 @@ export default function App() {
   const handleAddFeedback = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const name = formData.get('submitter_name') as string;
+    
     const payload = {
       user_voice: formData.get('user_voice') as string,
       channel: formData.get('channel') as FeedbackChannel,
-      submitter: '客服专员',
+      submitter: name,
     };
 
     try {
@@ -451,13 +438,10 @@ export default function App() {
                             </td>
                             <td className="px-8 py-6">
                               <div className="flex items-center gap-3 whitespace-nowrap">
-                                <div className="w-7 h-7 rounded-full bg-apple-blue-light flex items-center justify-center text-[10px] font-bold text-apple-blue flex-shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-apple-blue/10 flex items-center justify-center text-[11px] font-bold text-apple-blue flex-shrink-0">
                                   {item.submitter[0]}
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                  <RoleBadge name={item.submitter} />
-                                  <span className="text-[11px] font-medium text-apple-text whitespace-nowrap">{item.submitter.replace(/运营|客服/, '')}</span>
-                                </div>
+                                <span className="text-[13px] font-medium text-apple-text whitespace-nowrap">{item.submitter}</span>
                               </div>
                             </td>
                             <td className="px-8 py-6 text-right">
@@ -522,24 +506,35 @@ export default function App() {
               
               {showNewFeedbackModal ? (
                 <form onSubmit={handleAddFeedback} className="p-8 space-y-6">
-                  <div>
-                    <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">用户原声 *</label>
-                    <textarea 
-                      name="user_voice"
-                      required
-                      placeholder="请输入用户反馈的具体内容..."
-                      className="w-full apple-input h-40 resize-none py-4"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">来源渠道 *</label>
-                    <select 
-                      name="channel"
-                      required
-                      className="w-full apple-input cursor-pointer"
-                    >
-                      {Object.values(FeedbackChannel).map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">用户原声 *</label>
+                      <textarea 
+                        name="user_voice"
+                        required
+                        placeholder="请输入用户反馈的具体内容..."
+                        className="w-full apple-input h-32 resize-none py-4"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">来源渠道 *</label>
+                      <select 
+                        name="channel"
+                        required
+                        className="w-full apple-input cursor-pointer"
+                      >
+                        {Object.values(FeedbackChannel).map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[11px] font-bold text-apple-gray-300 uppercase mb-2 tracking-widest">提交人姓名 *</label>
+                      <input 
+                        name="submitter_name"
+                        required
+                        placeholder="请输入您的姓名"
+                        className="w-full apple-input"
+                      />
+                    </div>
                   </div>
                   <div className="pt-4 flex gap-4">
                     <button 
