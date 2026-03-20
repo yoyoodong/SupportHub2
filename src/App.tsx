@@ -74,8 +74,8 @@ export default function App() {
     setIsLoading(true);
     try {
       // Check if Supabase is configured
-      const isSupabaseConfigured = (process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) && 
-                                   (process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY);
+      const isSupabaseConfigured = (process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL) && 
+                                   (process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY);
       
       if (!isSupabaseConfigured) {
         throw new Error('Supabase configuration missing');
@@ -350,13 +350,13 @@ export default function App() {
                   transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                   className="grid grid-cols-1 xl:grid-cols-2 gap-8"
                 >
-                  {filteredQA.map(item => (
-                    <div key={item.id} className="apple-card p-8 group">
+                  {filteredQA.map((item, index) => (
+                    <div key={item.recordId || item.id} className="apple-card p-8 group">
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex items-center gap-3">
                           <CategoryBadge category={item.category} />
                           <span className="text-[11px] font-bold text-apple-gray-300 tracking-widest">
-                            {item.id.length > 8 ? item.id.slice(0, 8).toUpperCase() : item.id}
+                            Q-{(index + 1).toString().padStart(3, '0')}
                           </span>
                         </div>
                         <button 
