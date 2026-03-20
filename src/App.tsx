@@ -51,7 +51,7 @@ const CategoryBadge = ({ category }: { category: QACategory }) => {
   };
   return (
     <span className={`px-3 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wider whitespace-nowrap ${colors[category] || 'bg-apple-gray-100 text-apple-gray-300'}`}>
-      {category}
+      {category || '未分类'}
     </span>
   );
 };
@@ -115,6 +115,7 @@ export default function App() {
       const mappedFeedback = (feedbackRes.data || []).map(item => ({
         ...item,
         recordId: item.id,
+        category: item.category || QACategory.CORE_FEATURES, // Default to Core Features if missing
         created_at: item.created_at ? new Date(item.created_at).getTime() : Date.now()
       }));
 
